@@ -1,0 +1,384 @@
+#!/usr/bin/env python2.7
+#python whoall
+#parallel, multi-threaded version
+#jacopogh - nov 2006
+#updated by various lcm admins & 150ers up to Nov 2015
+#requires python version 2.7 or above
+#please read the wiki before editing this file
+
+#take the starting time
+from time import time
+
+start = time()
+
+#import needed modules
+import telnetlib
+from sys import argv,exit,stdout
+import getopt
+import os
+from threading import Thread
+from socket import error
+import collections
+
+#important variables: gods, hosts and term colors
+gods = ['root','andreatsh','andreamalerba','lorenzouboldi','stefanobalzan','eugeniothieme']
+#former admins: bother them at your own risk
+chucknorris = [ 'agalli', 'ikki', 'buddino', 'alex', 'ema', 'ktf', 'davideg', 'jacopogh', 'lampo', 'gian', 'rbondesan', 'scolari', 'emanueleb', 'giani_matteo','gabryv','fran','alqahirah','giorgio_ruffa','palazzi','algebrato','blanc','blue','silviacotroneo'] 
+
+#riordinati in ordine alfabetico - jp
+lcm1 = ['abe','crash','duke','glados','lara','link','king','pang','pong','snake','sonic','spyro','yoshi']
+lcm2 = ['actarus','elwood','gex','gin','jake','kirk','martini','picard','q','raziel','sarek','spock','tron','worf','zombie']
+laur = ['eskimo','orion','tilde']
+
+cuda = ['jacobi','yukawa','tesla']
+math5 = ['abe','glados','link','king','pang','pong','snake','spyro','yoshi']
+math4 = ['sonic','crash','duke','raziel','actarus','gin','kirk','martini','picard','sarek','tron','worf','zombie','q','elwood','jake']
+math = math5 + math4
+condor = lcm1 + lcm2
+masterizzatori = ['crash','duke','spyro']
+
+
+#############################################
+#Node class
+#the bulk of the program is done here
+#############################################
+
+class Node(Thread):
+	#constructor
+	def __init__(self,nome,port):
+		#fork the thread first thing
+		Thread.__init__(self)
+		#variable initialization
+		self.hostname = nome
+		self.local = []
+		self.remote = []
+		self.lgod = []
+		self.rgod = []
+		#former admins
+		self.chuck = []
+		#node status
+		self.up = True
+		self.aval = True
+		self.port = port
+		self.timeout = False
+
+	#ping the host to see if it's up
+	def isup(self):
+		#is the host up?
+		ping = os.popen("ping -w1 -c1 "+self.hostname,"r")
+        	if "0 received" in ping.read():
+			self.up = False
+			return False
+		else:
+			return True
+	
+	#open telnet connection
+	def connect(self):
+		#try to connect first
+		try: 
+			self.conn = telnetlib.Telnet(self.hostname,self.port)
+		#inetd is down!
+		except error, msg:
+			self.aval = False
+			return False
+		return True
+	
+	#read lcm_w ouput and fill accordingly the users-gods lists
+	def read(self):	
+		#read data
+		lista=''
+		reachable=0
+		try: lista = self.conn.read_until("EOF",1)
+		except EOFError: reachable=1
+		del self.conn
+		
+		if lista=='':
+			if reachable == 0:
+				self.timeout=True	
+
+		#split lines and fields
+		righe = lista.splitlines()
+		#needed later for isempty
+		self.users = len(righe)
+
+		#local-remote-god user check
+		for x in righe:
+			fields = x.split()
+
+		# siii, cioe', non avete proprio niente da fare, eh?
+                        #if fields[0] == "gian":
+                          #      fields[0] = "gina"
+                          #      fields[1] = "pts"
+
+		#	if fields[0] == "algebrato":
+		#		fields[0] = "stefanomandelli"
+		#		fields[1] = "pts"
+
+			if "tty" in fields[1]:
+				if fields[0] in gods:
+					self.lgod.append(fields[0].lower())
+				else:
+					if fields[0] not in chucknorris:
+						self.local.append(fields[0].lower())
+			else:
+				if fields[0] in gods:
+					if fields[0] not in self.lgod:
+						self.rgod.append(fields[0].lower())
+				else:
+					if fields[0] not in self.local:
+						if fields[0] not in chucknorris:
+							self.remote.append(fields[0].lower())
+				#former admins
+			if fields[0] in chucknorris:
+				self.chuck.append(fields[0].lower())
+	#run method
+	#this is the part that every thread executes in parallel
+	#if host is up -> open connection -> if connection -> read data
+	def run(self):
+		if self.isup(): 
+			if self.connect():
+				self.read()
+	
+	#is the host empty?
+	def isempty(self):
+		if (self.users > 0): 
+			return False
+		else:
+			return True
+
+	#print output giorgio-style, host based (after threads have finished)
+	def printlist(self):
+		#uniq equivalent and string conversion
+		strlocal = ""
+		strremote = ""
+		strlgod = ""
+		strrgod = ""
+		strchuck = ""
+		
+	
+		if "-N" not in str(params[0]):
+                        #a set cannot have duplicate entries: uniq equivalent
+                        for item in set(self.local):
+                                strlocal += str(item) + ' '
+                        for item in set(self.remote):
+                                strremote += str(item) +' '
+                        for item in set(self.lgod):
+                                strlgod += str(item) +' '
+                        for item in set(self.rgod):
+                                strrgod += str(item) +' '
+                        for item in set(self.chuck):
+                                strchuck += str(item) +' '
+                else:
+                        #print also how many times users are logged (added by jp)
+                        for item in set(self.local):
+                                strlocal += str(item) + '('+str(collections.Counter(self.local).values()[collections.Counter(self.local).keys().index(item)])+') '
+                        for item in set(self.remote):
+                                strremote += str(item) +'('+str(collections.Counter(self.remote).values()[collections.Counter(self.remote).keys().index(item)])+') '
+                        for item in set(self.lgod):
+                                strlgod += str(item) +'('+str(collections.Counter(self.lgod).values()[collections.Counter(self.lgod).keys().index(item)])+') '
+                        for item in set(self.rgod):
+                                strrgod += str(item) +'('+str(collections.Counter(self.rgod).values()[collections.Counter(self.rgod).keys().index(item)])+') '
+                        for item in set(self.chuck):
+                                strchuck += str(item) +'('+str(collections.Counter(self.chuck).values()[collections.Counter(self.chuck).keys().index(item)])+') '
+
+		#routine that prints 64-bit nodes' names in yellow
+	#	if self.hostname in newcluster:
+	#		print ' ' + "\033[1;33m" + self.hostname + ' '*(15-len(self.hostname))+ red + strlgod + normal + pink + strrgod + normal + green + strlocal + normal + blue + strremote + normal+ turquoise+strchuck+normal
+	#	else:
+	
+		#print a tag [C] aside CUDA hosts (jp)
+		if self.hostname in cuda:
+			self.hostname = self.hostname + ' '*(5-len(self.hostname))+'[C]'
+
+		print ' ' + self.hostname + ' '*(15-len(self.hostname))+ red + strlgod + normal + pink + strrgod + normal + green + strlocal + normal + blue + strremote + normal+ turquoise+strchuck+normal
+		
+###################################################
+#main part
+###################################################
+
+
+#get user groups
+groups = os.popen("groups").readlines()[0].split()
+
+#print usage info
+def Usage():
+	print 'Usage: '+argv[0]+' [flags]'
+	print ' -h\tthis help'
+	print ' -f\tempty, unreachable and unavailable info'
+	print ' -1\tonly LCM1 hosts'
+	print ' -2\tonly LCM2 hosts'
+	print ' -l\tonly LAUR hosts'
+	print ' -C\tonly CUDA hosts'
+	print ' -m\tonly mathematica hosts'
+	print ' -c\tonly condor hosts'
+	print ' -w\tonly hosts with cd burner'
+	print ' -n\tnot display the progressbar and colors'
+	print ' -N\talso display number of logs'
+	exit(1)
+
+#getopt
+try: params = getopt.getopt(argv[1:],'12lcCmfhkFnwN')
+except getopt.GetoptError:
+	print 'Wrong parameter'
+	Usage()
+
+#help mode (-h)
+if "-h" in str(params[0]): Usage()
+
+#kurt mode
+port = 79
+if "-k" in str(params[0]): port = 799
+
+#default (no options given)
+splitters = [('abe','\033[1;36mLCM1\033[0m'),('actarus','\033[1;32mLCM2\033[0m'),('jacobi','\033[1;35mCUDA\033[0m'),('eskimo','\033[1;33mLAUR\033[0m')]
+progressbar = 1
+
+hosts = []
+#boring: define the various cases
+if "-1" in str(params[0]): 
+	hosts += lcm1
+
+if "-2" in str(params[0]): 
+	hosts += lcm2
+
+if "-l" in str(params[0]): 
+	hosts += laur
+
+if "-C" in str(params[0]): 
+	hosts += cuda
+
+if "-m" in str(params[0]): 
+	hosts += math
+	#splitters = [('jake','LCM1'),('tilde','LCM2'),('wolfgang','LAUR')]
+	
+if "-c" in str(params[0]): 
+	hosts = condor
+	#splitters = [('jake','LCM1'),('gin','LCM2')]
+
+if "-w" in str(params[0]): 
+	hosts = masterizzatori
+	#splitters = [('actarus','LCM1'),('z','LCM2')]
+
+if "-n" in str(params[0]):
+	splitters = [('jake','LCM1'),('gin','LCM2'),('jacobi','CUDA'),('orion','LAUR')]
+	progressbar = 0
+
+#commented lines: CUDA hosts are printed only once under section 'CUDA', not also under 'LCM1/2'
+#for i in cuda:
+#	if i in lcm1:
+#		lcm1=lcm1[:lcm1.index(i)]+lcm1[lcm1.index(i)+1:]
+#	elif i in lcm2:
+#		lcm2=lcm2[:lcm2.index(i)]+lcm2[lcm2.index(i)+1:]
+#	elif i in laur:
+#		laur=laur[:laur.index(i)]+laur[laur.index(i)+1:]
+
+#default behaviour (no options given)
+if (hosts == []):
+	hosts = lcm1 + lcm2 + laur + cuda
+
+#setting colors
+if progressbar > 0:
+	red = "\033[1;31m"
+	normal = "\033[0m"
+	blue = "\033[1;34m"
+	pink = "\033[1;35m"
+	green = "\033[1;32m"
+	turquoise ="\033[1;36m"
+else:
+	red = ""
+	normal = ""
+	blue = ""
+	pink = ""
+	green = ""
+	turquoise =""
+
+
+#initialization of the four lists
+downlist = ""
+emptylist = ""
+unavlist = ""
+timeoutlist = ""
+
+#initialize the threadlist
+threadlist = []
+	
+#number of hosts (for progressbar)
+num = len(hosts)
+
+#start the threads
+for item in hosts:
+	m=Node(item,port)
+	threadlist.append(m)
+	m.start()
+
+#used for progressbar
+index = 0
+print ' Querying '+str(num)+' hosts...'
+
+#rejoin them when their work is done
+for thread in threadlist:
+	thread.join()
+	if progressbar > 0:
+		#progessbar
+		index += 1
+		stdout.write('\r ['+'='*index+'>'*(1-int(index/num))+' '*(num-index-1)+']')	
+		stdout.flush()
+
+if progressbar > 0:
+	#newline
+	print '\n Done... ( %(t).3f s)' % {'t': (time() - start)}
+
+#and now print!
+for thread in threadlist:
+	#lcm1-lcm2-laur splitters
+	for pair in splitters:
+		if thread.hostname in pair[0]: print '-' + pair[1] + normal +'----'
+	
+	#see what they are up to
+	#and print accordingly
+	
+	if thread.hostname in cuda:
+		thread.hostname +='[C]'
+	if "-m" in str(params[0]):
+		if thread.hostname in math4:
+			thread.hostname +='[M4]'
+		if thread.hostname in math5:
+	        	thread.hostname +='[M5]'
+	if not thread.up:
+		#host down
+		downlist += thread.hostname + ' '
+	else:
+		if not thread.aval:
+			#host unavailable
+			unavlist += thread.hostname + ' '
+			continue
+		if thread.timeout:
+			#thread has timed out
+			timeoutlist += thread.hostname + ' '
+			continue
+		if thread.isempty():
+			#host is empty
+			emptylist += thread.hostname + ' '
+		else:
+			thread.printlist()
+	
+#some final output
+if progressbar > 0:
+	print
+	print 'Legenda: '+green + 'utente locale '+normal+blue+'utente remoto '+normal+red+'admin locale '+normal+pink+'admin remoto '+normal+turquoise+'nirvana'+normal
+	print "         I nodi contrassegnati con [C] sono i nodi CUDA."
+	if "-m" in str(params[0]):
+		print "         I nodi contrassegnati con [M4] hanno Mathematica 4.0"
+		print "         I nodi contrassegnati con [M5] hanno Mathematica 5.2"
+#	print "         I nodi colorati in " + "\033[1;33mgiallo " + normal + "appartengono al cluster a 64bit"
+	print
+
+#only in full mode 
+if ("-f" in str(params[0])) or ("-F" in str(params[0])) or ("-m" in str(params[0])) or ("-C" in str(params[0])):
+	print red+'Empty: '+normal+emptylist
+	print red+'Timeout: '+normal+timeoutlist
+	print red+'Unreachable: '+normal+downlist
+	print red+'Unavailable: '+normal+unavlist
+
+#exit gracefully
+exit(0)
