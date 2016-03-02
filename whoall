@@ -105,15 +105,6 @@ class Node(Thread):
 		for x in righe:
 			fields = x.split()
 
-		# siii, cioe', non avete proprio niente da fare, eh?
-                        #if fields[0] == "gian":
-                          #      fields[0] = "gina"
-                          #      fields[1] = "pts"
-
-		#	if fields[0] == "algebrato":
-		#		fields[0] = "stefanomandelli"
-		#		fields[1] = "pts"
-
 			if "tty" in fields[1]:
 				if fields[0] in gods:
 					self.lgod.append(fields[0].lower())
