@@ -1,4 +1,5 @@
 #!/usr/bin/python
+# - *- coding: utf- 8 - *-
 #
 # Python whoall: parallel, multi-threaded version
 # First author: jacopogh - nov 2006
@@ -21,11 +22,14 @@ from socket import error
 from sys import argv,exit,stdout
 
 # Some array definitions
-lcm1 = ['abe','crash','duke','glados','lara','link','king','pang','pong','snake','sonic','spyro','yoshi']
-lcm2 = ['actarus','elwood','gex','gin','jake','kirk','martini','picard','q','raziel','sarek','spock','tron','worf','zombie']
+lcm1 = ['abe','crash','duke','glados','lara','link','king','pang','pong',
+        'snake','sonic','spyro','yoshi']
+lcm2 = ['actarus','elwood','gex','gin','jake','kirk','martini','picard','q',
+        'raziel','sarek','spock','tron','worf','zombie']
 laur = ['eskimo','orion','tilde']
 
-math4 = ['sonic','crash','duke','raziel','actarus','gin','kirk','martini','picard','sarek','tron','worf','zombie','q','elwood','jake']
+math4 = ['sonic','crash','duke','raziel','actarus','gin','kirk','martini',
+         'picard','sarek','tron','worf','zombie','q','elwood','jake']
 math5 = ['abe','glados','link','king','pang','pong','snake','spyro','yoshi']
 math = math4 + math5
 
@@ -33,24 +37,41 @@ cuda = ['jacobi','yukawa','tesla']
 
 
 # Important variables: gods, hosts and term colors
-gods = ['root','andreatsh','andreamalerba','lorenzouboldi','stefanobalzan','eugeniothieme']
+gods = ['root','andreatsh','andreamalerba','lorenzouboldi',
+        'stefanobalzan','eugeniothieme']
 # Former admins: bother them at your own risk
-chucknorris = [ 'agalli', 'ikki', 'buddino', 'alex', 'ema', 'ktf', 'davideg', 'jacopogh', 'lampo', 'gian', 'rbondesan', 'scolari', 'emanueleb', 'giani_matteo','gabryv','fran','alqahirah','giorgio_ruffa','palazzi','algebrato','blanc','blue','silviacotroneo'] 
+chucknorris = [ 'agalli', 'ikki', 'buddino', 'alex', 'ema', 'ktf',
+                'davideg', 'jacopogh', 'lampo', 'gian', 'rbondesan',
+                'scolari', 'emanueleb', 'giani_matteo','gabryv','fran',
+                'alqahirah','giorgio_ruffa','palazzi','algebrato','blanc',
+                'blue','silviacotroneo']
 
 
-parser = argparse.ArgumentParser( epilog='Please, report bugs or unwanted behavior to: working@lcm.mi.infn.it' )
+parser = argparse.ArgumentParser(
+                    epilog='Please, report bugs or unwanted behavior to: \
+working@lcm.mi.infn.it' )
 
 ## Optional arguments
-parser.add_argument( '-1', '--lcm1', action='store_true', default=False, dest='lcm1', help='LCM1 hosts ' )
-parser.add_argument( '-2', '--lcm2', action='store_true', default=False, dest='lcm2', help='LCM2 hosts ' )
-parser.add_argument( '-l', '--laur', action='store_true', default=False, dest='laur', help='only LAUR hosts ' )
-parser.add_argument( '-c', '--condor', action='store_true', default=False, dest='condor', help='condor nodes '  )
-parser.add_argument( '-C', '--cuda', action='store_true', default=False, dest='cuda', help='only CUDA hosts ' )
-parser.add_argument( '-f', '--full', action='store_true', default=False, dest='full', help='empty, unreachable and unavailable info' )
-parser.add_argument( '-m', '--math', action='store_true', default=False, dest='math', help='only Mathematica hosts ' )
-parser.add_argument( '-n', action='store_true', default=False, dest='n', help='not display the progressbar and colors' )
-parser.add_argument( '-N', action='store_true', default=False, dest='N', help='also display number of logs' )
-parser.add_argument( '-v', '--version', action='version', version='%(prog)s 2.0', help='Print program version' )	   
+parser.add_argument('-1', '--lcm1', action='store_true', default=False,
+                    dest='lcm1', help='LCM1 hosts ')
+parser.add_argument('-2', '--lcm2', action='store_true', default=False,
+                    dest='lcm2', help='LCM2 hosts ')
+parser.add_argument('-l', '--laur', action='store_true', default=False,
+                    dest='laur', help='only LAUR hosts ')
+parser.add_argument('-c', '--condor', action='store_true', default=False,
+                    dest='condor', help='condor nodes ')
+parser.add_argument('-C', '--cuda', action='store_true', default=False,
+                    dest='cuda', help='only CUDA hosts ')
+parser.add_argument('-f', '--full', action='store_true', default=False,
+                    dest='full', help='empty, unreachable and unavailable info')
+parser.add_argument('-m', '--math', action='store_true', default=False,
+                    dest='math', help='only Mathematica hosts ')
+parser.add_argument('-n', action='store_true', default=False,
+                    dest='n', help='not display the progressbar and colors')
+parser.add_argument('-N', action='store_true', default=False,
+                    dest='N', help='also display number of logs')
+parser.add_argument('-v', '--version', action='version',
+                    version='%(prog)s 2.0', help='Print program version')
 ####
 
 args = parser.parse_args()
@@ -65,11 +86,16 @@ elif args.cuda: hosts += cuda
 elif args.math: hosts += math
 else: hosts = lcm1 + lcm2 + laur + cuda
 
+# FIXME non si può fare così lo splitting
 if args.n:
-   splitters = [('jake','LCM1'),('gin','LCM2'),('jacobi','CUDA'),('orion','LAUR')]
+   splitters = [('jake','LCM1'),('gin','LCM2'),
+                ('jacobi','CUDA'),('orion','LAUR')]
    progressbar = 0
 else: 
-   splitters = [('abe','\033[1;36mLCM1\033[0m'),('actarus','\033[1;32mLCM2\033[0m'),('jacobi','\033[1;35mCUDA\033[0m'),('eskimo','\033[1;33mLAUR\033[0m')]
+   splitters = [('abe','\033[1;36mLCM1\033[0m'),
+                ('actarus','\033[1;32mLCM2\033[0m'),
+                ('jacobi','\033[1;35mCUDA\033[0m'),
+                ('eskimo','\033[1;33mLAUR\033[0m')]
    progressbar = 1
     
 # Define port
@@ -200,21 +226,54 @@ class Node(Thread):
         else:
             # Print also how many times users are logged (added by jp)
             for item in set(self.local):
-                strlocal += str(item) + '('+str(collections.Counter(self.local).values()[collections.Counter(self.local).keys().index(item)])+') '
+                strlocal += str(item) \
+                            + '(' \
+                            + str(collections.Counter(self.local).values()[
+                                    collections.Counter(self.local).keys()
+                                        .index(item)
+                                  ]) \
+                            + ') '
             for item in set(self.remote):
-                strremote += str(item) +'('+str(collections.Counter(self.remote).values()[collections.Counter(self.remote).keys().index(item)])+') '
+                strremote += str(item) \
+                             + '(' \
+                             + str(collections.Counter(self.remote).values()[
+                                    collections.Counter(self.remote).keys()
+                                        .index(item)
+                                   ]) \
+                             +') '
             for item in set(self.lgod):
-                strlgod += str(item) +'('+str(collections.Counter(self.lgod).values()[collections.Counter(self.lgod).keys().index(item)])+') '
+                strlgod += str(item) \
+                           + '(' \
+                           + str(collections.Counter(self.lgod).values()[
+                                    collections.Counter(self.lgod).keys()
+                                        .index(item)
+                                 ]) \
+                           + ') '
             for item in set(self.rgod):
-                strrgod += str(item) +'('+str(collections.Counter(self.rgod).values()[collections.Counter(self.rgod).keys().index(item)])+') '
+                strrgod += str(item) \
+                           + '(' \
+                           + str(collections.Counter(self.rgod).values()[
+                                    collections.Counter(self.rgod).keys()
+                                        .index(item)
+                                 ]) \
+                           + ') '
             for item in set(self.chuck):
-                strchuck += str(item) +'('+str(collections.Counter(self.chuck).values()[collections.Counter(self.chuck).keys().index(item)])+') '
+                strchuck += str(item) \
+                            + '(' \
+                            + str(collections.Counter(self.chuck).values()[
+                                    collections.Counter(self.chuck).keys()
+                                        .index(item)
+                                  ]) \
+                            + ') '
 
         # Print a tag [C] aside CUDA hosts (jp)
         if self.hostname in cuda:
             self.hostname = self.hostname + ' '*(5-len(self.hostname))+'[C]'
 
-        print ' ' + self.hostname + ' '*(15-len(self.hostname))+ red + strlgod + normal + pink + strrgod + normal + green + strlocal + normal + blue + strremote + normal+ turquoise+strchuck+normal
+        print ' ' + self.hostname + ' '*(15-len(self.hostname)) \
+                + red + strlgod + normal + pink + strrgod + normal + green \
+                + strlocal + normal + blue + strremote + normal \
+                + turquoise + strchuck + normal
 
 
 ###################################################
@@ -270,7 +329,10 @@ for thread in threadlist:
     if progressbar > 0:
         # Progessbar
         index += 1
-        stdout.write('\r ['+'='*index+'>'*(1-int(index/num))+' '*(num-index-1)+']')    
+        stdout.write('\r ['
+                     + '='*index
+                     + '>'*(1-int(index/num))
+                     + ' '*(num-index-1) + ']')
         stdout.flush()
 
 if progressbar > 0:
@@ -312,16 +374,21 @@ for thread in threadlist:
 # Some final output
 if progressbar > 0:
     print
-    print 'Legenda: '+green + 'utente locale '+normal+blue+'utente remoto '+normal+red+'admin locale '+normal+pink+'admin remoto '+normal+turquoise+'nirvana'+normal
+    print 'Legenda: ' + green + 'utente locale '+ normal \
+          + blue + 'utente remoto ' + normal + red + 'admin locale ' + normal \
+          + pink + 'admin remoto ' + normal + turquoise + 'nirvana' + normal
     print "         I nodi contrassegnati con [C] sono i nodi CUDA."
     if args.math:
         print "         I nodi contrassegnati con [M4] hanno Mathematica 4.0"
         print "         I nodi contrassegnati con [M5] hanno Mathematica 5.2"
     print
 
-# Only in full mode 
-#if ("-f" in str(params[0])) or ("-F" in str(params[0])) or ("-m" in str(params[0])) or ("-C" in str(params[0])):
-if args.full or args.math or args.cuda: 
+# Only in full mode
+#if ("-f" in str(params[0]))
+#       or ("-F" in str(params[0]))
+#       or ("-m" in str(params[0]))
+#       or ("-C" in str(params[0])):
+if args.full or args.math or args.cuda:
     print red+'Empty: '+normal+emptylist
     print red+'Timeout: '+normal+timeoutlist
     print red+'Unreachable: '+normal+downlist
@@ -329,4 +396,3 @@ if args.full or args.math or args.cuda:
 
 # Exit gracefully
 exit(0)
-
