@@ -11,7 +11,7 @@
 from time import time
 start = time()
 
-# Import needed modules
+# Import required modules
 import argparse
 import collections
 import os
@@ -21,7 +21,7 @@ from threading import Thread
 from socket import error
 from sys import argv,exit,stdout
 
-# Some array definitions
+# Some list definitions
 lcm1 = ['abe','crash','duke','glados','lara','link','king','pang','pong',
         'snake','sonic','spyro','yoshi']
 lcm2 = ['actarus','elwood','gex','gin','jake','kirk','martini','picard','q',
@@ -86,7 +86,7 @@ elif args.cuda: hosts += cuda
 elif args.math: hosts += math
 else: hosts = lcm1 + lcm2 + laur + cuda
 
-# FIXME non si può fare così lo splitting
+# FIXME it would be better not to rely on host names for splitting
 if args.n:
    splitters = [('jake','LCM1'),('gin','LCM2'),
                 ('jacobi','CUDA'),('orion','LAUR')]
@@ -147,7 +147,7 @@ class Node(Thread):
             return False
         return True
     
-    # Read lcm_w ouput and fill accordingly the users-gods lists
+    # Read lcm_w ouput and fill users-gods lists accordingly
     def read(self):    
         # Read data
         lista=''
@@ -194,7 +194,7 @@ class Node(Thread):
             if self.connect():
                 self.read()
     
-    # Is the host empty?
+    # Is host empty?
     def isempty(self):
         if (self.users > 0): 
             return False
