@@ -8,6 +8,11 @@
 # Requires python version 2.7 or above
 # Please read the wiki before editing this file
 
+# TODO
+# - improve means of separation between lcm1, lcm2, laur
+# - improve handling of options (e.g. "whoall -1 -m" should return
+#   nodes in lcm1 which have mathematica installed)
+
 from time import time
 start = time()
 
@@ -52,6 +57,7 @@ parser = argparse.ArgumentParser(
 working@lcm.mi.infn.it' )
 
 ## Optional arguments
+# FIXME default=False is superfluous (it's implied by store_true)
 parser.add_argument('-1', '--lcm1', action='store_true', default=False,
                     dest='lcm1', help='LCM1 hosts ')
 parser.add_argument('-2', '--lcm2', action='store_true', default=False,
