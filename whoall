@@ -230,7 +230,7 @@ class Node(Thread):
             for item in set(self.chuck):
                 strchuck += str(item) +' '
         else:
-            # Print also how many times users are logged (added by jp)
+            # Also print how many times users are logged (jp+blue)
             for item in set(self.local):
                 strlocal += str(item) \
                             + '(' \
@@ -272,7 +272,7 @@ class Node(Thread):
                                   ]) \
                             + ') '
 
-        # Print a tag [C] aside CUDA hosts (jp)
+        # Print a tag [C] alongside CUDA hosts (jp)
         if self.hostname in cuda:
             self.hostname = self.hostname + ' '*(5-len(self.hostname))+'[C]'
 
