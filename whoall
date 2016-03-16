@@ -18,10 +18,10 @@ start = time()
 
 # Import required modules
 import argparse
-import collections
 import os
 import telnetlib
 import textwrap
+from collections import Counter
 from threading import Thread
 from socket import error
 from sys import argv,exit,stdout
@@ -231,46 +231,21 @@ class Node(Thread):
                 strchuck += str(item) +' '
         else:
             # Also print how many times users are logged (jp+blue)
-            for item in set(self.local):
-                strlocal += str(item) \
-                            + '(' \
-                            + str(collections.Counter(self.local).values()[
-                                    collections.Counter(self.local).keys()
-                                        .index(item)
-                                  ]) \
-                            + ') '
-            for item in set(self.remote):
-                strremote += str(item) \
-                             + '(' \
-                             + str(collections.Counter(self.remote).values()[
-                                    collections.Counter(self.remote).keys()
-                                        .index(item)
-                                   ]) \
-                             +') '
-            for item in set(self.lgod):
-                strlgod += str(item) \
-                           + '(' \
-                           + str(collections.Counter(self.lgod).values()[
-                                    collections.Counter(self.lgod).keys()
-                                        .index(item)
-                                 ]) \
-                           + ') '
-            for item in set(self.rgod):
-                strrgod += str(item) \
-                           + '(' \
-                           + str(collections.Counter(self.rgod).values()[
-                                    collections.Counter(self.rgod).keys()
-                                        .index(item)
-                                 ]) \
-                           + ') '
-            for item in set(self.chuck):
-                strchuck += str(item) \
-                            + '(' \
-                            + str(collections.Counter(self.chuck).values()[
-                                    collections.Counter(self.chuck).keys()
-                                        .index(item)
-                                  ]) \
-                            + ') '
+            lcounter = Counter(self.local)
+            for user in lcounter:
+                strlocal += user + '(' + str(lcounter[user]) + ')'
+            rcounter = Counter(self.remote)
+            for user in rcounter:
+                strremote += user + '(' + str(rcounter[user]) + ') '
+            lgcounter = Counter(self.lgod)
+            for user in lgcounter:
+                strlgod += user + '(' + str(lgcounter[user]) + ') '
+            rgcounter = Counter(self.rgod)
+            for user in rgcounter:
+                strrgod += user + '(' + str(rgcounter[user]) + ') '
+            ccounter = Counter(self.chuck)
+            for user in ccounter:
+                strchuck += user + '(' + str(ccounter[user]) + ') '
 
         # Print a tag [C] alongside CUDA hosts (jp)
         if self.hostname in cuda:
