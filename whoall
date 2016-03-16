@@ -57,25 +57,25 @@ parser = argparse.ArgumentParser(
 working@lcm.mi.infn.it' )
 
 ## Optional arguments
-# FIXME default=False is superfluous (it's implied by store_true)
-parser.add_argument('-1', '--lcm1', action='store_true', default=False,
-                    dest='lcm1', help='LCM1 hosts ')
-parser.add_argument('-2', '--lcm2', action='store_true', default=False,
-                    dest='lcm2', help='LCM2 hosts ')
-parser.add_argument('-l', '--laur', action='store_true', default=False,
-                    dest='laur', help='only LAUR hosts ')
-parser.add_argument('-c', '--condor', action='store_true', default=False,
-                    dest='condor', help='condor nodes ')
-parser.add_argument('-C', '--cuda', action='store_true', default=False,
-                    dest='cuda', help='only CUDA hosts ')
-parser.add_argument('-f', '--full', action='store_true', default=False,
-                    dest='full', help='empty, unreachable and unavailable info')
-parser.add_argument('-m', '--math', action='store_true', default=False,
-                    dest='math', help='only Mathematica hosts ')
-parser.add_argument('-n', action='store_true', default=False,
-                    dest='n', help='not display the progressbar and colors')
-parser.add_argument('-N', action='store_true', default=False,
-                    dest='N', help='also display number of logs')
+parser.add_argument('-1', '--lcm1', action='store_true', dest='lcm1',
+                    help='only display LCM1 hosts ')
+parser.add_argument('-2', '--lcm2', action='store_true', dest='lcm2',
+                    help='only display LCM2 hosts ')
+parser.add_argument('-l', '--laur', action='store_true', dest='laur',
+                    help='only display LAUR hosts ')
+parser.add_argument('-c', '--condor', action='store_true', dest='condor',
+                    help='only display condor nodes ')
+parser.add_argument('-C', '--cuda', action='store_true', dest='cuda',
+                    help='only display CUDA hosts ')
+parser.add_argument('-f', '--full', action='store_true', dest='full',
+                    help='display all nodes including empty, \
+                    unreachable and unavailable')
+parser.add_argument('-m', '--math', action='store_true', dest='math',
+                    help='only Mathematica hosts ')
+parser.add_argument('-n', action='store_true', dest='n',
+                    help='not display the progressbar and colors')
+parser.add_argument('-N', action='store_true', dest='N',
+                    help='also display number of logs')
 parser.add_argument('-v', '--version', action='version',
                     version='%(prog)s 2.0', help='Print program version')
 ####
