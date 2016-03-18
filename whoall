@@ -54,7 +54,7 @@ args = parser.parse_args()
 
 # Define port on which the lcm_w service is listening
 # NB at the time of writing lcm_w is managed by inetd
-PORT = 79 
+PORT = 79
 
 
 #############################################
@@ -100,30 +100,30 @@ class Node(Thread):
             return False
         else:
             return True
-    
+
     # Open telnet connection
     def connect(self):
         # Try to connect first
-        try: 
+        try:
             self.conn = telnetlib.Telnet(self.hostname,self.port)
         # Inetd is down!
         except error:
             self.avail = False
             return False
         return True
-    
+
     # Read lcm_w ouput and fill users-gods lists accordingly
-    def read(self):    
+    def read(self):
         # Read data
         lista=''
         reachable=0
         try: lista = self.conn.read_until("EOF",1)
         except EOFError: reachable=1
         del self.conn
-        
+
         if lista=='':
             if reachable == 0:
-                self.timeout=True    
+                self.timeout=True
 
         # Split lines and fields
         righe = lista.splitlines()
@@ -155,13 +155,13 @@ class Node(Thread):
     # This is the part that every thread executes in parallel
     # If host is up -> open connection -> if connection -> read data
     def run(self):
-        if self.isup(): 
+        if self.isup():
             if self.connect():
                 self.read()
-    
+
     # Is host empty?
     def isempty(self):
-        if (self.users > 0): 
+        if (self.users > 0):
             return False
         else:
             return True
@@ -289,7 +289,7 @@ if args.n:
                  'LCM2': '-LCM2----',
                  'CUDA': '-CUDA----',
                  'LAUR': '-LAUR----' }
-else: 
+else:
    splitters = { 'LCM1': '-\033[1;36mLCM1\033[0m----',
                  'LCM2': '-\033[1;32mLCM2\033[0m----',
                  'CUDA': '-\033[1;35mCUDA\033[0m----',
@@ -297,7 +297,7 @@ else:
 
 
 ###################################################
-# Main 
+# Main
 ###################################################
 
 # Set terminal colors
