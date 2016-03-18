@@ -87,7 +87,7 @@ class Node(Thread):
         self.chuck = []
         # Node status
         self.up = True
-        self.aval = True
+        self.avail = True
         self.port = port
         self.timeout = False
 
@@ -107,8 +107,8 @@ class Node(Thread):
         try: 
             self.conn = telnetlib.Telnet(self.hostname,self.port)
         # Inetd is down!
-        except error, msg:
-            self.aval = False
+        except error:
+            self.avail = False
             return False
         return True
     
@@ -190,21 +190,8 @@ class Node(Thread):
         strlgod = ""
         strrgod = ""
         strchuck = ""
-        
-    
-        if not args.N:
-            # A set cannot have duplicate entries: uniq equivalent
-            for item in set(self.local):
-                strlocal += str(item) + ' '
-            for item in set(self.remote):
-                strremote += str(item) +' '
-            for item in set(self.lgod):
-                strlgod += str(item) +' '
-            for item in set(self.rgod):
-                strrgod += str(item) +' '
-            for item in set(self.chuck):
-                strchuck += str(item) +' '
-        else:
+
+        if args.N:
             # Also print how many times users are logged (jp+blue)
             lcounter = Counter(self.local)
             for user in lcounter:
@@ -221,6 +208,18 @@ class Node(Thread):
             ccounter = Counter(self.chuck)
             for user in ccounter:
                 strchuck += user + '(' + str(ccounter[user]) + ') '
+        else:
+            # A set cannot have duplicate entries: uniq equivalent
+            for item in set(self.local):
+                strlocal += str(item) + ' '
+            for item in set(self.remote):
+                strremote += str(item) +' '
+            for item in set(self.lgod):
+                strlgod += str(item) +' '
+            for item in set(self.rgod):
+                strrgod += str(item) +' '
+            for item in set(self.chuck):
+                strchuck += str(item) +' '
 
         # Print out hostname and connected users
         print ' ' + self.qualifiedname() + ' '*(15-len(self.qualifiedname())) \
@@ -301,12 +300,8 @@ else:
 # Main 
 ###################################################
 
-
-# Get user groups
-groups = os.popen("groups").readlines()[0].split()
-
-# Setting colors
-if progressbar > 0:
+# Set terminal colors
+if not args.n:
     red = "\033[1;31m"
     normal = "\033[0m"
     blue = "\033[1;34m"
@@ -345,7 +340,7 @@ for node in nodes:
 
 # Used for progressbar
 index = 0
-print ' Querying '+str(num)+' hosts...'
+print ' Querying ' + str(num) + ' hosts...'
 
 # Rejoin them when their work is done
 # NB a progress bar does not make much sense if join is not asynchronous (blue)
@@ -423,10 +418,6 @@ if progressbar > 0:
     print
 
 # Only in full mode
-#if ("-f" in str(params[0]))
-#       or ("-F" in str(params[0]))
-#       or ("-m" in str(params[0]))
-#       or ("-C" in str(params[0])):
 if args.full or args.math or args.cuda:
     print red+'Empty: '+normal+emptylist
     print red+'Timeout: '+normal+timeoutlist
