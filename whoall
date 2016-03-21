@@ -5,58 +5,28 @@
 # First author: jacopogh - nov 2006
 # Modified and updated by admins & 150 over time
 #
-# Requires python version 2.7 or above
-# Please read the wiki before editing this file
+# Last modified: March 2016 - blue
 
-# TODO
-# - improve means of separation between lcm1, lcm2, laur
-# - improve handling of options (e.g. "whoall -1 -m" should return
-#   nodes in lcm1 which have mathematica installed)
 
 from time import time
 start = time()
 
-# Import required modules
 import argparse
 import os
 import telnetlib
-import textwrap
 from collections import Counter
 from threading import Thread
 from socket import error
-from sys import argv,exit,stdout
-
-# Some list definitions
-lcm1 = ['abe','crash','duke','glados','lara','link','king','pang','pong',
-        'snake','sonic','spyro','yoshi']
-lcm2 = ['actarus','elwood','gex','gin','jake','kirk','martini','picard','q',
-        'raziel','sarek','spock','tron','worf','zombie']
-laur = ['eskimo','orion','tilde']
-
-math4 = ['sonic','crash','duke','raziel','actarus','gin','kirk','martini',
-         'picard','sarek','tron','worf','zombie','q','elwood','jake']
-math5 = ['abe','glados','link','king','pang','pong','snake','spyro','yoshi']
-math = math4 + math5
-
-cuda = ['jacobi','yukawa','tesla']
+from sys import exit,stdout
 
 
-# Important variables: gods, hosts and term colors
-gods = ['root','andreatsh','andreamalerba','lorenzouboldi',
-        'stefanobalzan','eugeniothieme']
-# Former admins: bother them at your own risk
-chucknorris = [ 'agalli', 'ikki', 'buddino', 'alex', 'ema', 'ktf',
-                'davideg', 'jacopogh', 'lampo', 'gian', 'rbondesan',
-                'scolari', 'emanueleb', 'giani_matteo','gabryv','fran',
-                'alqahirah','giorgio_ruffa','palazzi','algebrato','blanc',
-                'blue','silviacotroneo']
-
-
+### ARGUMENT PARSING ###
+# Define parser
 parser = argparse.ArgumentParser(
                     epilog='Please, report bugs or unwanted behavior to: \
-working@lcm.mi.infn.it' )
+                            working@lcm.mi.infn.it' )
 
-## Optional arguments
+# Define optional arguments
 parser.add_argument('-1', '--lcm1', action='store_true', dest='lcm1',
                     help='only display LCM1 hosts ')
 parser.add_argument('-2', '--lcm2', action='store_true', dest='lcm2',
@@ -77,49 +47,38 @@ parser.add_argument('-n', action='store_true', dest='n',
 parser.add_argument('-N', action='store_true', dest='N',
                     help='also display number of logs')
 parser.add_argument('-v', '--version', action='version',
-                    version='%(prog)s 2.0', help='Print program version')
-####
+                    version='%(prog)s 2.1', help='Print program version')
 
+# Parse arguments
 args = parser.parse_args()
 
-hosts=[]
-
-if (( args.lcm1 and args.lcm2 ) or args.condor ) : hosts = lcm1 + lcm2 
-elif args.lcm1: hosts += lcm1
-elif args.lcm2: hosts += lcm2
-elif args.laur: hosts += laur
-elif args.cuda: hosts += cuda
-elif args.math: hosts += math
-else: hosts = lcm1 + lcm2 + laur + cuda
-
-# FIXME it would be better not to rely on host names for splitting
-if args.n:
-   splitters = [('jake','LCM1'),('gin','LCM2'),
-                ('jacobi','CUDA'),('orion','LAUR')]
-   progressbar = 0
-else: 
-   splitters = [('abe','\033[1;36mLCM1\033[0m'),
-                ('actarus','\033[1;32mLCM2\033[0m'),
-                ('jacobi','\033[1;35mCUDA\033[0m'),
-                ('eskimo','\033[1;33mLAUR\033[0m')]
-   progressbar = 1
-    
-# Define port
-port = 79 
+# Define port on which the lcm_w service is listening
+# NB at the time of writing lcm_w is managed by inetd
+PORT = 79
 
 
 #############################################
 # Node class
-# The bulk of the program is done here
+# Each node executes a `who` query in a separate thread
 #############################################
 
 class Node(Thread):
     # Constructor
-    def __init__(self,nome,port):
+    def __init__(self, name, location, math4=False, math5=False,
+                 cuda=False, condor=False, port=PORT):
         # Fork the thread first thing
         Thread.__init__(self)
         # Variables initialization
-        self.hostname = nome
+        self.hostname = name
+        self.location = location
+        if math4:
+            self.math_version = 'M4'
+        elif math5:
+            self.math_version = 'M5'
+        else:
+            self.math_version = 'NA'
+        self.cuda = cuda
+        self.condor = condor
         self.local = []
         self.remote = []
         self.lgod = []
@@ -128,7 +87,7 @@ class Node(Thread):
         self.chuck = []
         # Node status
         self.up = True
-        self.aval = True
+        self.avail = True
         self.port = port
         self.timeout = False
 
@@ -141,30 +100,30 @@ class Node(Thread):
             return False
         else:
             return True
-    
+
     # Open telnet connection
     def connect(self):
         # Try to connect first
-        try: 
+        try:
             self.conn = telnetlib.Telnet(self.hostname,self.port)
         # Inetd is down!
-        except error, msg:
-            self.aval = False
+        except error:
+            self.avail = False
             return False
         return True
-    
+
     # Read lcm_w ouput and fill users-gods lists accordingly
-    def read(self):    
+    def read(self):
         # Read data
         lista=''
         reachable=0
         try: lista = self.conn.read_until("EOF",1)
         except EOFError: reachable=1
         del self.conn
-        
+
         if lista=='':
             if reachable == 0:
-                self.timeout=True    
+                self.timeout=True
 
         # Split lines and fields
         righe = lista.splitlines()
@@ -196,16 +155,32 @@ class Node(Thread):
     # This is the part that every thread executes in parallel
     # If host is up -> open connection -> if connection -> read data
     def run(self):
-        if self.isup(): 
+        if self.isup():
             if self.connect():
                 self.read()
-    
+
     # Is host empty?
     def isempty(self):
-        if (self.users > 0): 
+        if (self.users > 0):
             return False
         else:
             return True
+
+    # Print hostname (plus qualifiers if needed)
+    def qualifiedname(self):
+        tmp = self.hostname
+
+        # Add math version to hostname if required
+        if args.math:
+            tmp += '[' + self.math_version + ']'
+
+        # Add cuda tag [C] to hostname for CUDA hosts (jp)
+        # FIXME I don't think we need this. Cuda nodes have their own section
+        # if self.cuda:
+        #     self.hostname += ' '*(5-len(self.hostname))+'[C]'
+
+        return tmp
+
 
     # Print output giorgio-style, host based (after threads have finished)
     def printlist(self):
@@ -215,21 +190,8 @@ class Node(Thread):
         strlgod = ""
         strrgod = ""
         strchuck = ""
-        
-    
-        if not args.N:
-            # A set cannot have duplicate entries: uniq equivalent
-            for item in set(self.local):
-                strlocal += str(item) + ' '
-            for item in set(self.remote):
-                strremote += str(item) +' '
-            for item in set(self.lgod):
-                strlgod += str(item) +' '
-            for item in set(self.rgod):
-                strrgod += str(item) +' '
-            for item in set(self.chuck):
-                strchuck += str(item) +' '
-        else:
+
+        if args.N:
             # Also print how many times users are logged (jp+blue)
             lcounter = Counter(self.local)
             for user in lcounter:
@@ -246,27 +208,100 @@ class Node(Thread):
             ccounter = Counter(self.chuck)
             for user in ccounter:
                 strchuck += user + '(' + str(ccounter[user]) + ') '
+        else:
+            # A set cannot have duplicate entries: uniq equivalent
+            for item in set(self.local):
+                strlocal += str(item) + ' '
+            for item in set(self.remote):
+                strremote += str(item) +' '
+            for item in set(self.lgod):
+                strlgod += str(item) +' '
+            for item in set(self.rgod):
+                strrgod += str(item) +' '
+            for item in set(self.chuck):
+                strchuck += str(item) +' '
 
-        # Print a tag [C] alongside CUDA hosts (jp)
-        if self.hostname in cuda:
-            self.hostname = self.hostname + ' '*(5-len(self.hostname))+'[C]'
-
-        print ' ' + self.hostname + ' '*(15-len(self.hostname)) \
+        # Print out hostname and connected users
+        print ' ' + self.qualifiedname() + ' '*(15-len(self.qualifiedname())) \
                 + red + strlgod + normal + pink + strrgod + normal + green \
                 + strlocal + normal + blue + strremote + normal \
                 + turquoise + strchuck + normal
+### end class Node
+
+
+### USER GROUPS ###
+# Current admins/150
+gods = ['root','andreatsh','andreamalerba','lorenzouboldi',
+        'stefanobalzan','eugeniothieme']
+
+# Former admins: bother them at your own risk
+chucknorris = [ 'agalli', 'ikki', 'buddino', 'alex', 'ema', 'ktf',
+                'davideg', 'jacopogh', 'lampo', 'gian', 'rbondesan',
+                'scolari', 'emanueleb', 'giani_matteo','gabryv','fran',
+                'alqahirah','giorgio_ruffa','palazzi','algebrato','blanc',
+                'blue','silviacotroneo']
+
+
+### HOST LIST ###
+# Only edit here to add/remove/change hostlist
+
+nodes = [
+    Node('abe',     'LCM1',     math5=True,     condor=True),
+    Node('crash',   'LCM1',     math4=True,     condor=True),
+    Node('duke',    'LCM1',     math4=True,     condor=True),
+    Node('glados',  'LCM1',     math5=True,     condor=True),
+    Node('lara',    'LCM1',                     condor=True),
+    Node('link',    'LCM1',     math5=True,     condor=True),
+    Node('king',    'LCM1',     math5=True,     condor=True),
+    Node('pang',    'LCM1',     math5=True,     condor=True),
+    Node('pong',    'LCM1',     math5=True,     condor=True),
+    Node('snake',   'LCM1',     math5=True,     condor=True),
+    Node('sonic',   'LCM1',     math4=True,     condor=True),
+    Node('spyro',   'LCM1',     math5=True,     condor=True),
+    Node('yoshi',   'LCM1',     math5=True,     condor=True),
+    Node('actarus', 'LCM2',     math4=True,     condor=True),
+    Node('elwood',  'LCM2',     math4=True,     condor=True),
+    Node('gex',     'LCM2',                     condor=True),
+    Node('gin',     'LCM2',     math4=True,     condor=True),
+    Node('jake',    'LCM2',     math4=True,     condor=True),
+    Node('kirk',    'LCM2',     math4=True,     condor=True),
+    Node('martini', 'LCM2',     math4=True,     condor=True),
+    Node('picard',  'LCM2',     math4=True,     condor=True),
+    Node('q',       'LCM2',     math4=True,     condor=True),
+    Node('raziel',  'LCM2',     math4=True,     condor=True),
+    Node('sarek',   'LCM2',     math4=True,     condor=True),
+    Node('spock',   'LCM2',                     condor=True),
+    Node('tron',    'LCM2',     math4=True,     condor=True),
+    Node('worf',    'LCM2',     math4=True,     condor=True),
+    Node('zombie',  'LCM2',     math4=True,     condor=True),
+    Node('eskimo',  'LAUR'),
+    Node('orion',   'LAUR'),
+    Node('tilde',   'LAUR'),
+    Node('jacobi',  'CUDA', cuda=True),
+    Node('yukawa',  'CUDA', cuda=True),
+    Node('tesla',   'CUDA', cuda=True),
+]
+
+
+### SECTION SPLITTERS ###
+if args.n:
+   splitters = { 'LCM1': '-LCM1----',
+                 'LCM2': '-LCM2----',
+                 'CUDA': '-CUDA----',
+                 'LAUR': '-LAUR----' }
+else:
+   splitters = { 'LCM1': '-\033[1;36mLCM1\033[0m----',
+                 'LCM2': '-\033[1;32mLCM2\033[0m----',
+                 'CUDA': '-\033[1;35mCUDA\033[0m----',
+                 'LAUR': '-\033[1;33mLAUR\033[0m----' }
 
 
 ###################################################
-# Main 
+# Main
 ###################################################
 
-
-# Get user groups
-groups = os.popen("groups").readlines()[0].split()
-
-# Setting colors
-if progressbar > 0:
+# Set terminal colors
+if not args.n:
     red = "\033[1;31m"
     normal = "\033[0m"
     blue = "\033[1;34m"
@@ -281,33 +316,37 @@ else:
     green = ""
     turquoise =""
 
+# Check whether we want a progressbar displayed
+progressbar = not args.n
 
-# Initialization of the four lists
-downlist = ""
-emptylist = ""
-unavlist = ""
-timeoutlist = ""
-
-# Initialize the threadlist
-threadlist = []
+# Filter hostlist according to arguments
+if args.lcm1:
+    nodes = [ node for node in nodes if node.location == 'LCM1' ]
+if args.lcm2:
+    nodes = [ node for node in nodes if node.location == 'LCM2' ]
+if args.laur:
+    nodes = [ node for node in nodes if node.location == 'LAUR' ]
+if args.cuda:
+    nodes = [ node for node in nodes if node.location == 'CUDA' ]
+if args.math:
+    nodes = [ node for node in nodes if node.math_version != 'NA' ]
 
 # Number of hosts (for progressbar)
-num = len(hosts)
+num = len(nodes)
 
 # Start the threads
-for item in hosts:
-    m=Node(item,port)
-    threadlist.append(m)
-    m.start()
+for node in nodes:
+    node.start()
 
 # Used for progressbar
 index = 0
-print ' Querying '+str(num)+' hosts...'
+print ' Querying ' + str(num) + ' hosts...'
 
 # Rejoin them when their work is done
-for thread in threadlist:
-    thread.join()
-    if progressbar > 0:
+# NB a progress bar does not make much sense if join is not asynchronous (blue)
+for node in nodes:
+    node.join()
+    if progressbar:
         # Progessbar
         index += 1
         stdout.write('\r ['
@@ -316,59 +355,69 @@ for thread in threadlist:
                      + ' '*(num-index-1) + ']')
         stdout.flush()
 
-if progressbar > 0:
+if progressbar:
     # Newline
     print '\n Done... ( %(t).3f s)' % {'t': (time() - start)}
 
-# And now print!
-for thread in threadlist:
-    # lcm1-lcm2-laur splitters
-    for pair in splitters:
-        if thread.hostname in pair[0]: print '-' + pair[1] + normal +'----'
-    
-    # See what they are up to and print accordingly
-    if thread.hostname in cuda:
-        thread.hostname +='[C]'
-    if args.math :
-        if thread.hostname in math4:
-            thread.hostname +='[M4]'
-        if thread.hostname in math5:
-                thread.hostname +='[M5]'
-    if not thread.up:
-        # Host down
-        downlist += thread.hostname + ' '
-    else:
-        if not thread.aval:
-            # Host unavailable
-            unavlist += thread.hostname + ' '
-            continue
-        if thread.timeout:
-            # Thread has timed out
-            timeoutlist += thread.hostname + ' '
-            continue
-        if thread.isempty():
-            # Host is empty
-            emptylist += thread.hostname + ' '
-        else:
-            thread.printlist()
-    
+if args.full or args.math or args.cuda:
+# Save down/unreachable/unavailable nodes to separate lists
+    downlist = ''
+    timeoutlist = ''
+    unavlist = ''
+    emptylist = ''
+    for node in nodes:
+        if not node.up:
+            downlist += node.qualifiedname() + ' '
+        elif node.timeout:
+            timeoutlist += node.qualifiedname() + ' '
+        elif not node.avail:
+            unavlist += node.qualifiedname() + ' '
+        elif node.isempty():
+            emptylist += node.qualifiedname() + ' '
+
+nodes = [ node for node in nodes if node.up
+                                    and not node.timeout
+                                    and node.avail
+                                    and not node.isempty() ]
+
+# Split notes by location
+lcm1nodes = [ node for node in nodes if node.location == 'LCM1' ]
+lcm2nodes = [ node for node in nodes if node.location == 'LCM2' ]
+laurnodes = [ node for node in nodes if node.location == 'LAUR' ]
+cudanodes = [ node for node in nodes if node.location == 'CUDA' ]
+
+# Print out
+if len(lcm1nodes):
+    print splitters['LCM1']
+    for node in lcm1nodes:
+        node.printlist()
+if len(lcm2nodes):
+    print splitters['LCM2']
+    for node in lcm2nodes:
+        node.printlist()
+if len(laurnodes):
+    print splitters['LAUR']
+    for node in laurnodes:
+        node.printlist()
+if len(cudanodes):
+    print splitters['CUDA']
+    for node in cudanodes:
+        node.printlist()
+
 # Some final output
 if progressbar > 0:
     print
     print 'Legenda: ' + green + 'utente locale '+ normal \
           + blue + 'utente remoto ' + normal + red + 'admin locale ' + normal \
           + pink + 'admin remoto ' + normal + turquoise + 'nirvana' + normal
-    print "         I nodi contrassegnati con [C] sono i nodi CUDA."
+    # FIXME I don't think we need this. Cuda nodes have their own section
+    # print "         I nodi contrassegnati con [C] sono i nodi CUDA."
     if args.math:
         print "         I nodi contrassegnati con [M4] hanno Mathematica 4.0"
         print "         I nodi contrassegnati con [M5] hanno Mathematica 5.2"
     print
 
 # Only in full mode
-#if ("-f" in str(params[0]))
-#       or ("-F" in str(params[0]))
-#       or ("-m" in str(params[0]))
-#       or ("-C" in str(params[0])):
 if args.full or args.math or args.cuda:
     print red+'Empty: '+normal+emptylist
     print red+'Timeout: '+normal+timeoutlist
