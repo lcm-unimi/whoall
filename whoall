@@ -342,18 +342,29 @@ for node in nodes:
 index = 0
 print ' Querying ' + str(num) + ' hosts...'
 
-# Rejoin them when their work is done
-# NB a progress bar does not make much sense if join is not asynchronous (blue)
-for node in nodes:
-    node.join()
-    if progressbar:
-        # Progessbar
-        index += 1
-        stdout.write('\r ['
-                     + '='*index
-                     + '>'*(1-int(index/num))
-                     + ' '*(num-index-1) + ']')
-        stdout.flush()
+# Try to join each node in turn
+# Remove their reference from nodescopy as they finish
+iterator = 0
+nodescopy = nodes[:] # shallow copy of nodes list
+while len(nodescopy) > 0:
+    node = nodescopy[iterator%len(nodescopy)]
+    iterator += 1
+    node.join(0)
+    if node.isAlive():
+        # Not done yet, let's come back later
+        continue
+    else:
+        # Node is done, remove it from nodescopy
+        nodescopy.remove(node)
+        # Update progressbar
+        if progressbar:
+            # Progessbar
+            index += 1
+            stdout.write('\r ['
+                         + '='*index
+                         + '>'*(1-int(index/num))
+                         + ' '*(num-index-1) + ']')
+            stdout.flush()
 
 if progressbar:
     # Newline
