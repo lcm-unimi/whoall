@@ -231,15 +231,14 @@ class Node(Thread):
 
 ### USER GROUPS ###
 # Current admins/150
-gods = ['root','andreatsh','andreamalerba','lorenzouboldi',
-        'stefanobalzan','eugeniothieme']
+gods = ['root']
 
 # Former admins: bother them at your own risk
 chucknorris = [ 'agalli', 'ikki', 'buddino', 'alex', 'ema', 'ktf',
                 'davideg', 'jacopogh', 'lampo', 'gian', 'rbondesan',
                 'scolari', 'emanueleb', 'giani_matteo','gabryv','fran',
                 'alqahirah','giorgio_ruffa','palazzi','algebrato','blanc',
-                'blue','silviacotroneo']
+                'blue','silviacotroneo','andreatsh','andreamalerba']
 
 
 ### HOST LIST ###
