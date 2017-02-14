@@ -356,7 +356,7 @@ for node in nodes:
 
 if progressbar:
     # Newline
-    print '\n Done... ( %(t).3f s)' % {'t': (time() - start)}
+    print '\n Done... (%(t).3f s)' % {'t': (time() - start)}
 
 if args.full or args.math or args.cuda:
 # Save down/unreachable/unavailable nodes to separate lists
