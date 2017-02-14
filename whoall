@@ -231,7 +231,7 @@ class Node(Thread):
 
 ### USER GROUPS ###
 # Current admins/150
-gods = ['root', 'claudiochi']
+gods = ['root', 'claudiochi','silva','stefanofranzini', 'piersilvio', 'tommasoredaelli']
 
 # Former admins: bother them at your own risk
 chucknorris = [ 'agalli', 'ikki', 'buddino', 'alex', 'ema', 'ktf',
