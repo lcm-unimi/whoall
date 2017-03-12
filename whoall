@@ -47,7 +47,7 @@ parser.add_argument('-n', action='store_true', dest='n',
 parser.add_argument('-N', action='store_true', dest='N',
                     help='also display number of logs')
 parser.add_argument('-v', '--version', action='version',
-                    version='%(prog)s 2.1', help='Print program version')
+                    version='%(prog)s 2.1', help='print program version')
 
 # Parse arguments
 args = parser.parse_args()
