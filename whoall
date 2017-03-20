@@ -195,7 +195,7 @@ class Node(Thread):
             # Also print how many times users are logged (jp+blue)
             lcounter = Counter(self.local)
             for user in lcounter:
-                strlocal += user + '(' + str(lcounter[user]) + ')'
+                strlocal += user + '(' + str(lcounter[user]) + ') '
             rcounter = Counter(self.remote)
             for user in rcounter:
                 strremote += user + '(' + str(rcounter[user]) + ') '
@@ -327,8 +327,11 @@ if args.laur:
     nodes = [ node for node in nodes if node.location == 'LAUR' ]
 if args.cuda:
     nodes = [ node for node in nodes if node.location == 'CUDA' ]
+if args.condor:
+    nodes = [ node for node in nodes if node.condor ]
 if args.math:
     nodes = [ node for node in nodes if node.math_version != 'NA' ]
+
 
 # Number of hosts (for progressbar)
 num = len(nodes)
