@@ -5,7 +5,7 @@
 # First author: jacopogh - nov 2006
 # Modified and updated by admins & 150 over time
 #
-# Last modified: March 2016 - blue
+# Last modified: March 2018 - matteosavatteri
 
 
 from time import time
@@ -231,14 +231,15 @@ class Node(Thread):
 
 ### USER GROUPS ###
 # Current admins/150
-gods = ['root', 'claudiochi','silva','stefanofranzini', 'piersilvio', 'tommasoredaelli']
+gods = ['root','lucacolombogomez','matteosavatteri']
 
 # Former admins: bother them at your own risk
 chucknorris = [ 'agalli', 'ikki', 'buddino', 'alex', 'ema', 'ktf',
                 'davideg', 'jacopogh', 'lampo', 'gian', 'rbondesan',
                 'scolari', 'emanueleb', 'giani_matteo','gabryv','fran',
                 'alqahirah','giorgio_ruffa','palazzi','algebrato','blanc',
-                'blue','silviacotroneo','andreatsh','andreamalerba']
+                'blue','silviacotroneo','andreatsh','andreamalerba',
+		'claudiochi','tommasoredaelli']
 
 
 ### HOST LIST ###
@@ -273,8 +274,6 @@ nodes = [
     Node('tron',    'LCM2',     math4=True,     condor=True),
     Node('worf',    'LCM2',     math4=True,     condor=True),
     Node('zombie',  'LCM2',     math4=True,     condor=True),
-    Node('eskimo',  'LAUR'),
-    Node('orion',   'LAUR'),
     Node('tilde',   'LAUR'),
     Node('jacobi',  'CUDA', cuda=True),
     Node('yukawa',  'CUDA', cuda=True),
